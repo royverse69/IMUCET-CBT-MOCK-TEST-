@@ -1,234 +1,232 @@
-# IMUCET CBT Mock Test Website
 
-A premium IMUCET-style Computer Based Test (CBT) platform with advanced analytics, fullscreen discipline system, AI-generated mock test support, detailed answer review, PDF reports, and modern exam simulation. 
+# IMUCET CBT Mock Test Platform
+
+A premium IMUCET Computer Based Test simulation platform designed to recreate the real examination environment with high accuracy. The platform includes advanced analytics, fullscreen discipline monitoring, AI powered mock test generation, detailed answer review systems, and downloadable performance reports. 
 
 ---
 
-## 👨‍💻 Developer
+# Developer
 
-Developed by **Ashutosh Roy**
+Developed and maintained by **Ashutosh Roy**
 
 Instagram:
 [@royverse Instagram](https://www.instagram.com/4zion69)
 
 ---
 
-# 📜 Copyright & Ownership
+# Copyright Notice
 
 © 2026 Ashutosh Roy. All Rights Reserved.
 
-This project, including its source code, UI design, structure, logic, report system, analytics engine, and CBT simulation workflow, is the intellectual property of **Ashutosh Roy**.
+The complete source code, interface design, analytics system, report generation logic, exam workflow, and CBT simulation architecture are the intellectual property of Ashutosh Roy.
 
-Unauthorized copying, redistribution, resale, modification, or commercial usage without permission is prohibited.
-
----
-
-# ⚠ Trademark & Logo Disclaimer
-
-All logos, trademarks, images, and brand names used in this project belong to their respective owners.
-
-This project is created only for educational, mock test, and simulation purposes and does not claim official ownership of any third-party logo or trademark.
+Unauthorized copying, redistribution, resale, modification, or commercial use of this project without permission is strictly prohibited.
 
 ---
 
-# 🚀 Features
+# Trademark & Logo Disclaimer
 
-* IMUCET-style CBT Interface
-* Fullscreen Exam Mode
-* Anti Tab-Switch Detection
-* AI Generated Mock Test Support
-* Advanced Analytics Dashboard
-* PDF Report Generator
-* Subject-wise Analysis
-* Question Palette System
-* Review & Mark for Review
-* Detailed Answer Key
-* Modern Responsive UI
-* Performance Tracking
-* Timer System
-* Auto JSON Validation
+All trademarks, logos, images, examination names, and brand assets used within this project belong to their respective owners.
+
+This platform is developed purely for educational practice, mock test simulation, and learning purposes. No official affiliation with Indian Maritime University or any respective organization is claimed.
 
 ---
 
-# 📂 Supported Input Sources
+# About The Platform
 
-The system can generate mock tests from:
+This platform is specially designed to closely replicate the real IMUCET examination environment.
 
-* PDFs
-* Images
-* Screenshots
-* DOCX files
-* OCR Text
-* Notes
-* YouTube Links
-* Raw Text
-* Previous Year Papers
-* Mixed Sources
+The complete user interface, question palette system, timer layout, fullscreen restrictions, navigation flow, review system, analytics structure, and overall CBT behavior are created to properly mimic the exact IMUCET CBT examination pattern and experience.
+
+The goal of this project is to provide students with a highly realistic practice environment before attempting the actual examination.
 
 ---
 
-# 🛠 How To Use The Website Properly
+# Main Features
 
-## Step 1 — Open the Website
+✔ Realistic IMUCET CBT Environment
+✔ Fullscreen Examination Mode
+✔ Advanced Anti Tab Switching Detection
+✔ AI Powered Mock Test Generation
+✔ Premium Performance Analytics
+✔ PDF Report Generation
+✔ Subject Wise Accuracy Analysis
+✔ Question Review & Marking System
+✔ Detailed Answer Key
+✔ Performance Tracking Dashboard
+✔ Real Time Timer System
+✔ Modern Responsive Interface
+✔ Intelligent JSON Validation
 
-Open the HTML file in your browser.
+---
+
+# Supported Input Sources
+
+The system can generate complete mock tests using:
+
+• PDF files
+• Images
+• Screenshots
+• DOCX documents
+• OCR extracted text
+• Handwritten notes
+• YouTube links
+• Raw text
+• Previous year question papers
+• Mixed study material sources
+
+---
+
+# How To Use The Website
+
+## Step 1 — Open The Website
+
+Open the HTML file using a modern browser.
 
 Recommended browsers:
 
-* Google Chrome
-* Microsoft Edge
+• Google Chrome
+• Microsoft Edge
 
 ---
 
 ## Step 2 — Generate Mock Test JSON
 
-1. Click **"Copy AI Prompt"**
-2. Open an AI model like:
-
-   * ChatGPT
-   * Claude
-   * Gemini
+1. Click on **Copy AI Prompt**
+2. Open an advanced AI model such as:
+   • ChatGPT
+   • Claude
+   • Gemini
 3. Paste the copied prompt
-4. Upload your study materials
-5. Ask the AI to generate IMUCET JSON
+4. Upload your study material
+5. Generate the IMUCET JSON test file
 
 ---
 
-## Step 3 — Paste JSON
+## Step 3 — Paste The JSON
 
 1. Copy the generated JSON
-2. Paste it inside:
-
-   ```json
-   Paste Exam JSON
-   ```
-3. Click:
-
-   ```
-   Validate & Initialize Test
-   ```
+2. Paste it into the JSON input field
+3. Click on **Validate & Initialize Test**
 
 ---
 
 ## Step 4 — Candidate Login
 
 1. Enter your full name
-2. Generate Hall Ticket
-3. Continue to Instructions
+2. Generate your hall ticket
+3. Continue to the instructions page
 
 ---
 
-## Step 5 — Start Exam
+## Step 5 — Start The Examination
 
-* Read instructions carefully
-* Accept terms & conditions
-* Start the exam
+Read all instructions carefully before starting the exam.
 
-⚠ Important:
+Important rules:
 
-* Do NOT switch tabs
-* Do NOT exit fullscreen
-* Doing so may auto-submit the exam
+• Do not switch tabs
+• Do not leave fullscreen mode
+• Any violation may instantly terminate the examination session
 
 ---
 
 ## Step 6 — Attempt Questions
 
-Available actions:
+Available actions inside the CBT system:
 
-* Save & Next
-* Mark for Review
-* Previous Question
-* Clear Response
+• Save & Next
+• Mark For Review
+• Previous Question
+• Clear Response
 
-Question Palette Colors:
+Question palette indicators:
 
-* 🔵 Not Answered
-* 🟢 Answered
-* 🔴 Marked for Review
-* 🟡 Answered & Marked
-
----
-
-## Step 7 — Submit Test
-
-After completion:
-
-* Submit the exam
-* Generate Premium Report
+🔵 Not Answered
+🟢 Answered
+🔴 Marked For Review
+🟡 Answered And Marked For Review
 
 ---
 
-## Step 8 — Analyze Performance
+## Step 7 — Submit The Test
 
-The system provides:
+After completing the examination:
 
-* Accuracy Analysis
-* Subject-wise Analytics
-* Weak Areas
-* Wrong Questions
-* Review Questions
-* Performance Index
-* PDF Report Download
+• Submit the test
+• Generate the premium report card
+• Download the complete PDF analysis
 
 ---
 
-# 📥 Installation
+# Performance Analytics
 
-No installation required.
+The platform provides advanced analytics including:
 
-Simply:
-
-1. Download the project
-2. Open the HTML file in browser
-
-OR
-
-Use Live Server in VS Code for better performance.
-
----
-
-# 🌐 Recommended Setup
-
-Recommended:
-
-* 8GB+ RAM
-* Chromium-based Browser
-* Stable Internet (for CDN libraries)
+• Accuracy analysis
+• Subject wise performance
+• Weak topic identification
+• Incorrect question review
+• Skipped question analysis
+• Performance index rating
+• Focus and discipline tracking
+• Downloadable premium PDF reports
 
 ---
 
-# 📦 External Libraries Used
+# Installation
 
-* Chart.js
-* jsPDF
-* html2canvas
+No installation is required.
 
-All respective libraries belong to their owners.
+Simply download the project and open the HTML file in your browser.
 
----
-
-# 🔒 Security Features
-
-* Fullscreen Lock
-* Tab Switch Detection
-* Blur Detection
-* Auto Submission on Violation
-* Watermark Protection
+For the best experience, using Live Server in VS Code is recommended.
 
 ---
 
-# 📄 License
+# Recommended System Requirements
+
+• Minimum 8GB RAM
+• Chromium based browser
+• Stable internet connection for CDN libraries
+
+---
+
+# External Libraries Used
+
+This project uses the following libraries:
+
+• Chart.js
+• jsPDF
+• html2canvas
+
+All respective libraries and assets belong to their original owners.
+
+---
+
+# Security & Discipline Features
+
+The platform includes several exam discipline systems including:
+
+• Fullscreen enforcement
+• Tab switch monitoring
+• Window blur detection
+• Automatic submission on violations
+• Dynamic watermark protection
+
+---
+
+# License
 
 This project is protected under copyright law.
 
 Personal educational usage is allowed.
 
-Commercial redistribution or resale without permission from **Ashutosh Roy** is prohibited.
+Commercial resale, redistribution, or republishing without permission from Ashutosh Roy is prohibited.
 
 ---
 
-# ❤️ Credits
+# Credits
 
 Made with ❤️ and ☕ by Ashutosh Roy
 
