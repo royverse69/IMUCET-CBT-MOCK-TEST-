@@ -1,0 +1,1514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IMUCET Mock Test - Offline CBT</title>
+    <!-- External Libraries for Analytics and PDF (Upgraded for memory-safe chunking) -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        /* --- CORE STYLES & VARIABLES --- */
+        :root {
+            --imu-blue: #0000ff;
+            --imu-green: #008000;
+            --ans-green: #008000;
+            --not-ans-red: #ff0000;
+            --not-vis-blue: #0000ff;
+            --review-purple: #800080;
+            --border: #cccccc;
+            --bg-gray: #f4f4f4;
+            --text-main: #333;
+            --glass-bg: #ffffff;
+            --glass-border: #e2e8f0;
+            --glass-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif; }
+        body { background-color: #fff; color: var(--text-main); overflow-x: hidden; font-size: 13px; }
+        
+        .screen { display: none; min-height: 100vh; flex-direction: column; background: #fff; }
+        .screen.active { display: flex; }
+
+        /* --- REUSABLE COMPONENTS --- */
+        .btn { padding: 8px 16px; background: #337ab7; color: #fff; border: 1px solid #2e6da4; cursor: pointer; font-size: 13px; border-radius: 6px; outline: none; transition: all 0.3s ease; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.1);}
+        .btn:hover { background: #286090; transform: translateY(-1px); box-shadow: 0 4px 6px rgba(0,0,0,0.15);}
+        .btn:active { transform: translateY(1px); box-shadow: 0 1px 2px rgba(0,0,0,0.1);}
+        .btn:disabled { background: #aaa; border-color: #999; cursor: not-allowed; transform: none; box-shadow: none;}
+        
+        .container { max-width: 900px; margin: 30px auto; padding: 30px; background: #fff; border: 1px solid var(--border); box-shadow: 0 10px 30px rgba(0,0,0,0.08); border-radius: 12px;}
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; font-weight: 700; margin-bottom: 8px; color: #1e293b;}
+        .form-control { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; transition: border-color 0.2s;}
+        .form-control:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);}
+        textarea.form-control { font-family: monospace; resize: vertical; }
+
+        /* --- HEADER --- */
+        .cbt-header { border-bottom: 1px solid var(--border); }
+        .header-top { display: flex; justify-content: space-between; align-items: center; padding: 5px 15px; background: #fff; border-bottom: 1px solid #ddd; }
+        .logo-box { display: flex; align-items: center; gap: 15px; flex: 1; }
+        .logo-box img { height: 50px; object-fit: contain; }
+        .exam-title-text { font-size: 1.1rem; font-weight: bold; color: #000; text-align: center; flex: 2; text-transform: uppercase; }
+        
+        .timer-container { display: flex; align-items: center; gap: 15px; flex: 1; justify-content: flex-end; }
+        .timer-box { background: #ffffcc; padding: 2px 10px; color: red; font-size: 1.1rem; font-weight: bold; min-width: 100px; text-align: center; border: 1px solid #ccc;}
+        .timer-label { font-size: 0.8rem; font-weight: bold; margin-bottom: 2px; text-align: center; }
+        
+        .header-sub { display: flex; justify-content: space-between; align-items: center; background: #fff; padding: 5px 15px; border-bottom: 1px solid #ddd; font-weight: bold; font-size: 0.85rem; }
+        .zoom-controls { display: flex; gap: 5px; align-items: center; }
+        .zoom-controls button { background: #337ab7; color: white; border: none; padding: 3px 10px; border-radius: 12px; font-size: 0.8rem; cursor: pointer;}
+        
+        /* --- EXAM LAYOUT --- */
+        .exam-layout { display: flex; flex: 1; height: calc(100vh - 100px); position: relative; background: #fff;}
+        .main-panel { flex: 1; display: flex; flex-direction: column; border-right: 1px solid var(--border); z-index: 2; position: relative; overflow: hidden; }
+        .side-panel { width: 320px; display: flex; flex-direction: column; background: #fff; z-index: 2; border-left: 1px solid var(--border);}
+        
+        /* Dynamic Repeating Watermark */
+        .watermark-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: -1; }
+
+        /* --- TABS & LINKS --- */
+        .top-links { padding: 5px 15px; }
+        .top-links span { cursor: pointer; margin-right: 15px; color: #d34500; text-decoration: underline; font-family: Verdana; font-weight: bold; font-size: 12px;}
+
+        .subjects-tab { display: flex; flex-wrap: wrap; padding: 5px 10px; gap: 5px; margin-top: 5px;}
+        .part-tab { background: blue; color: white; border-radius: 3px; cursor: pointer; text-align: center; padding: 4px 12px; min-width: 90px; border: none; display: inline-block; }
+        .part-tab.active { background: green; }
+        .part-title { font-weight: bold; font-size: 14px; font-family: Verdana; margin-bottom: 2px;}
+        .part-sub { font-size: 13px; font-family: Verdana; }
+
+        /* --- QUESTION AREA --- */
+        .q-meta-bar { padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #ccc; font-weight: bold; font-family: Verdana;}
+        .action-buttons { display: flex; gap: 10px; justify-content: center; padding: 10px; }
+        
+        .question-content { padding: 20px; flex: 1; overflow-y: auto; }
+        .question-text-box { padding: 10px; margin-bottom: 5px; font-size: 14px; font-family: Verdana;}
+        
+        .options-table { width: 100%; border-collapse: collapse; border: 1px solid #ccc; font-family: Verdana;}
+        .options-table td { border: 1px solid #ccc; padding: 8px; vertical-align: middle; background: #fff;}
+        .options-table td:first-child { width: 40px; text-align: center; }
+        .options-table input[type="radio"] { cursor: pointer; transform: scale(1.1);}
+
+        /* --- SIDE PANEL --- */
+        .side-header { display: flex; justify-content: flex-end; padding: 10px; font-weight: bold; font-size: 0.85rem; align-items: center; gap: 5px; font-family: Verdana;}
+        .tot-ans-badge { background: #ffff00; color: #000; padding: 1px 5px; font-weight: bold; border: 1px solid #ccc; }
+        
+        .lang-select-bar { display: flex; justify-content: space-between; padding: 5px 10px; align-items: center; border-bottom: 1px solid #eee; font-family: Verdana;}
+        .palette-title { text-align: center; font-weight: bold; padding: 10px 5px 5px; font-size: 13px; font-family: Verdana; color: black; }
+        
+        .palette-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; padding: 10px 20px; max-height: 250px; overflow-y: auto; }
+        .pal-btn { width: 100%; aspect-ratio: 1.5/1; border: none; font-weight: bold; font-size: 13px; cursor: pointer; background: blue; color: white; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-family: Verdana; position: relative;}
+        
+        /* Correct Status Colors for Palette as per IMUCET reference */
+        .pal-btn.not-attempted { background: blue; color: white; }
+        .pal-btn.answered { background: green; color: white; }
+        .pal-btn.review { background: red; color: white; }
+        .pal-btn.answered-review { background: yellow; color: black; }
+        .pal-btn.review::after, .pal-btn.answered-review::after { content: '▲'; position: absolute; bottom: -8px; left: 50%; transform: translateX(-50%); font-size: 10px; color: black; }
+
+        /* Analysis Table */
+        .analysis-box { margin-top: auto; padding: 0; border-top: 1px solid #999; }
+        .analysis-table { width: 100%; border-collapse: collapse; font-size: 12px; font-family: Verdana; }
+        .analysis-table th { background: #dcdcdc; text-align: center; font-weight: bold; color: #333; border: 1px solid #a0a0a0; padding: 6px; }
+        .analysis-table td { border: 1px solid #a0a0a0; padding: 6px; color: black;}
+        .analysis-table td:first-child { text-align: left; padding-left: 10px;}
+        .analysis-table td:last-child { font-weight: bold; text-align: center; width: 50px; }
+        .analysis-table td.val-bg { background: #fffbe6; color: red; font-weight: bold;}
+
+        /* Panel Collapse Arrow */
+        .panel-toggle-btn { position: absolute; right: 320px; top: 110px; width: 20px; height: 30px; cursor: pointer; z-index: 100; display: flex; align-items: center; justify-content: center; }
+        .arrow-icon { color: var(--imu-blue); font-size: 24px; }
+
+        /* Modals */
+        .custom-modal { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; overflow-y: auto; padding: 20px 40px; backdrop-filter: blur(5px);}
+        .modal-content-box { background: #fff; max-width: 900px; margin: 40px auto; padding: 30px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); position: relative;}
+        .modal-close { position: absolute; top: 15px; right: 20px; text-align: center; }
+        .modal-close a { color: #64748b; font-weight: bold; font-size: 16px; text-decoration: none; font-family: Arial, sans-serif; transition: 0.2s;}
+        .modal-close a:hover { color: #ef4444; }
+        .modal-table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 13px; font-family: Verdana;}
+        .modal-table th { background: #e2e8f0; padding: 10px; border: 1px solid #cbd5e1; font-weight: bold; text-align: center;}
+        .modal-table td { padding: 10px; border: 1px solid #cbd5e1; vertical-align: middle;}
+
+        .img-btn { cursor: pointer; border: none; background: none; padding: 0; outline: none; transition: transform 0.1s; display: inline-flex; align-items: center; justify-content: center; }
+        .img-btn:active { transform: scale(0.95); }
+        .img-btn img { display: block; max-height: 28px; }
+        
+        /* --- PREMIUM ANALYTICS DASHBOARD (SCREEN 5) --- */
+        .premium-dashboard { background: #f1f5f9; overflow-y: auto; flex:1;}
+        .dashboard-container { max-width: 1100px; margin: 0 auto; padding: 30px 15px; }
+        .glass-card { 
+            background: rgba(255, 255, 255, 0.95); 
+            border: 1px solid rgba(226, 232, 240, 0.8); 
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01); 
+            border-radius: 16px; padding: 25px; margin-bottom: 25px; 
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .glass-card:hover { transform: translateY(-2px); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01); }
+        
+        .dash-header { text-align: center; margin-bottom: 25px; border-bottom: 2px solid #e2e8f0; padding-bottom: 15px;}
+        .dash-title { font-size: 28px; font-weight: 800; color: #0f172a; margin-bottom: 5px; letter-spacing: -0.5px;}
+        .dash-subtitle { font-size: 14px; color: #64748b; font-weight: 500;}
+        
+        /* Flex Layouts for better PDF rendering */
+        .flex-row { display: flex; flex-wrap: wrap; gap: 25px; margin-bottom: 25px;}
+        .flex-col { flex: 1; min-width: 300px; }
+        
+        /* KPIs */
+        .kpi-grid { display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 25px; justify-content: center;}
+        .kpi-box { flex: 1; min-width: 140px; text-align: center; padding: 20px 15px; border-radius: 12px; background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%); border: 1px solid #e2e8f0; box-shadow: 0 2px 4px rgba(0,0,0,0.02); transition: transform 0.3s ease; }
+        .kpi-box:hover { transform: scale(1.02); }
+        .kpi-title { font-size: 11px; color: #64748b; text-transform: uppercase; font-weight: 800; letter-spacing: 0.8px;}
+        .kpi-value { font-size: 28px; font-weight: 900; color: #0f172a; margin-top: 8px; font-family: 'Segoe UI', system-ui, sans-serif;}
+        .kpi-sub { font-size: 12px; color: #94a3b8; margin-top: 5px; font-weight: 600;}
+
+        .section-title { font-size: 18px; font-weight: 800; color: #1e293b; margin-bottom: 20px; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px;}
+        .chart-container { position: relative; height: 260px; width: 100%; display: flex; align-items: center; justify-content: center;}
+        
+        .insights-grid { display: flex; flex-direction: column; gap: 12px; }
+        .insight-box { display: flex; align-items: flex-start; gap: 15px; padding: 15px; background: #f8fafc; border-radius: 10px; border-left: 4px solid #3b82f6; border-top: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; transition: all 0.3s ease;}
+        .insight-box:hover { background: #fff; box-shadow: 0 4px 6px rgba(0,0,0,0.05); transform: translateX(2px);}
+        .insight-icon { font-size: 22px; }
+        .insight-content h4 { font-size: 14px; color: #0f172a; margin-bottom: 4px; font-weight: 800;}
+        .insight-content p { font-size: 13px; color: #475569; line-height: 1.5;}
+
+        /* Detailed Response Sheet Styling */
+        .filter-bar { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; justify-content: center;}
+        .filter-btn { padding: 8px 18px; border-radius: 20px; font-size: 13px; font-weight: 700; border: 1px solid #cbd5e1; background: #fff; color: #475569; cursor: pointer; transition: all 0.2s; box-shadow: 0 1px 2px rgba(0,0,0,0.05);}
+        .filter-btn.active { background: #3b82f6; color: white; border-color: #3b82f6; box-shadow: 0 4px 6px rgba(59,130,246,0.2);}
+        .filter-btn:hover:not(.active) { background: #f1f5f9; color: #0f172a; transform: translateY(-1px);}
+
+        .response-list { display: flex; flex-direction: column; gap: 20px; }
+        .q-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.02); overflow: hidden; page-break-inside: avoid; transition: transform 0.2s;}
+        .q-card:hover { transform: translateY(-2px); box-shadow: 0 6px 12px rgba(0,0,0,0.05);}
+        .q-header { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; font-size: 13px; flex-wrap: wrap; gap: 10px;}
+        .q-header-left { font-weight: 800; color: #1e293b; letter-spacing: 0.5px;}
+        .q-header-right { display: flex; gap: 10px; align-items: center;}
+        .q-body { padding: 20px; }
+        .q-text { font-size: 15px; font-weight: 600; color: #0f172a; margin-bottom: 20px; line-height: 1.6; }
+        .q-options { display: flex; flex-direction: column; gap: 10px; }
+        .q-opt { padding: 12px 18px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px; color: #334155; background: #fff; display: flex; justify-content: space-between; transition: 0.2s;}
+        .q-opt.correct { background: #ecfdf5; border-color: #22c55e; font-weight: 700; color: #166534;}
+        .q-opt.wrong { background: #fef2f2; border-color: #ef4444; font-weight: 700; color: #991b1b;}
+        .q-footer { padding: 10px 20px; background: #f8fafc; border-top: 1px solid #e2e8f0; font-size: 12px; color: #64748b; display: flex; justify-content: space-between; font-weight: 600;}
+        
+        .badge { padding: 4px 10px; border-radius: 12px; font-weight: 800; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;}
+        .badge.correct { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0;}
+        .badge.wrong { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca;}
+        .badge.skipped { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1;}
+        .badge.review { background: #f3e8ff; color: #6b21a8; border: 1px solid #e9d5ff;}
+
+        /* --- HIGHLY OPTIMIZED PDF EXPORT COMPRESSOR STYLES --- */
+        /* These styles activate ONLY during download to prepare chunks for memory-safe rendering */
+        .pdf-exporting { background: #fff !important; }
+        .pdf-exporting .premium-dashboard { background: #fff !important; }
+        .pdf-exporting .dashboard-container { padding: 10px !important; max-width: none !important; margin: 0 !important; }
+        .pdf-exporting .glass-card { padding: 15px !important; margin-bottom: 10px !important; box-shadow: none !important; border: 1px solid #cbd5e1 !important; border-radius: 6px !important; page-break-inside: avoid;}
+        .pdf-exporting .q-card { margin-bottom: 8px !important; border-radius: 4px !important; box-shadow: none !important; border: 1px solid #ccc !important; page-break-inside: avoid; }
+        .pdf-exporting .q-header { padding: 6px 10px !important; font-size: 11px !important;}
+        .pdf-exporting .q-body { padding: 8px 10px !important; }
+        .pdf-exporting .q-text { font-size: 12px !important; margin-bottom: 8px !important; line-height: 1.3 !important;}
+        .pdf-exporting .q-options { display: grid !important; grid-template-columns: 1fr 1fr !important; gap: 4px !important; }
+        .pdf-exporting .q-opt { padding: 5px 8px !important; font-size: 11px !important; border-radius: 4px !important; }
+        .pdf-exporting .q-footer { padding: 5px 10px !important; font-size: 10px !important; }
+        .pdf-exporting .badge { padding: 2px 5px !important; font-size: 9px !important; }
+        .pdf-exporting .kpi-box { padding: 8px !important; }
+        .pdf-exporting .kpi-value { font-size: 18px !important; }
+        .pdf-exporting .filter-bar, .pdf-exporting .cbt-header { display: none !important; } 
+
+        @media print {
+            .premium-dashboard { background: white; }
+            .glass-card { box-shadow: none; border: 1px solid #ccc; margin-bottom: 20px; break-inside: avoid;}
+            .filter-bar, .cbt-header { display: none !important; } 
+            .q-card { break-inside: avoid; border: 1px solid #999;}
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- SCREEN 1: Setup -->
+    <div id="screen-upload" class="screen active">
+        <div class="cbt-header">
+            <div class="header-top">
+                <div class="logo-box">
+                    <img src="https://imu.cbexams.com/IMUCET_MockTest_2026/images/logo.jpeg" alt="IMU Logo" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCI+PGNpcmNsZSBjeD0iMzAiIGN5PSIzMCIgcj0iMzAiIGZpbGw9IiMwMDMzOTkiLz48dGV4dCB4PSIxNSIgeT0iMzciIGZpbGw9IiNmZmYiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNiI+SU1VPC90ZXh0Pjwvc3ZnPg=='">
+                    <div class="exam-title-text" style="text-align: left;">CBT Mock Test Setup</div>
+                </div>
+            </div>
+        </div>
+        <div class="container">
+            <h2 style="font-weight: 800; color: #1e293b; margin-bottom: 20px;">Test Configuration</h2>
+            <div class="form-group" style="margin-top: 15px;">
+                <label>Paste Exam JSON (Advanced Schema Enabled):</label>
+                <textarea id="json-input" class="form-control" rows="10" placeholder="Paste test data here..."></textarea>
+            </div>
+            <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                <button class="btn" style="background:#2563eb; border-color:#1d4ed8;" onclick="validateJSON()">Validate & Initialize Test</button>
+                <button class="btn" style="background:#10b981; border-color:#059669;" onclick="openModal('how-to-use-modal')">How to Use & Auto-Generate</button>
+                <button class="btn" style="background:#f59e0b; border-color:#d97706;" onclick="copyPrompt()">Copy AI Prompt</button>
+            </div>
+            <div id="json-error" style="color: #ef4444; margin-top: 15px; font-weight: bold;"></div>
+            
+            <div style="text-align: center; margin-top: 30px; font-size: 14px; color: #64748b;">
+                Made with ❤️ and ☕ by <a href="https://www.instagram.com/4zion69/" target="_blank" style="color: #3b82f6; text-decoration: none; font-weight: bold;">@royverse</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- How To Use Modal -->
+    <div id="how-to-use-modal" class="custom-modal">
+        <div class="modal-content-box" style="max-width: 700px;">
+            <div class="modal-close"><a href="#" onclick="closeModal('how-to-use-modal'); return false;">✖ Close</a></div>
+            <h2 style="color: #1e293b; font-weight: 800; margin-bottom: 20px; font-size: 24px;">How to Generate a Premium Mock Test</h2>
+            
+            <ol style="line-height: 1.8; font-size: 15px; color: #475569; padding-left: 20px; margin-bottom: 25px;">
+                <li><strong style="color: #0f172a;">Copy the Prompt:</strong> Click the <span style="background: #f59e0b; color: #fff; padding: 2px 6px; border-radius: 4px; font-size: 12px;">Copy AI Prompt</span> button on the main page.</li>
+                <li><strong style="color: #0f172a;">Go to an AI:</strong> Paste this prompt into any advanced AI model (like ChatGPT, Claude, or Gemini).</li>
+                <li><strong style="color: #0f172a;">Upload your Sources:</strong> Give the AI your study materials (book PDFs, images, links to previous year questions, notes, etc.). Provide as much content as you have!</li>
+                <li><strong style="color: #0f172a;">Generate & Copy:</strong> The AI will process everything and generate a complete Mock Test JSON code block. Copy this raw text.</li>
+                <li><strong style="color: #0f172a;">Initialize Test:</strong> Paste the JSON back into the text box on this website and click <span style="background: #2563eb; color: #fff; padding: 2px 6px; border-radius: 4px; font-size: 12px;">Validate & Initialize Test</span>.</li>
+                <li><strong style="color: #0f172a;">Start & Focus:</strong> Enter your real name, read the instructions, and start. <br>
+                <span style="color: #ef4444; font-weight: bold; display: inline-block; margin-top: 8px;">⚠ IMPORTANT DISCIPLINE RULE:</span> Once you start, you cannot leave the fullscreen or switch tabs for 3 hours. Doing so will instantly terminate and fail the test!</li>
+                <li><strong style="color: #0f172a;">Analyze:</strong> After the test, download the premium PDF report card to analyze your speed, stamina, weaknesses, and guessing habits.</li>
+            </ol>
+            
+            <div style="text-align: center;">
+                <button class="btn" style="background:#2563eb;" onclick="closeModal('how-to-use-modal')">Got it!</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCREEN 2: Login -->
+    <div id="screen-candidate" class="screen">
+        <div class="cbt-header">
+            <div class="header-top">
+                <div class="logo-box"><img src="https://imu.cbexams.com/IMUCET_MockTest_2026/images/logo.jpeg" alt="IMU" onerror="this.style.display='none'"></div>
+            </div>
+        </div>
+        <div class="container" style="max-width: 500px;">
+            <h2 style="text-align:center; border-bottom:1px solid #eee; padding-bottom:10px; margin-bottom:20px;">Candidate Login</h2>
+            <div class="form-group">
+                <label>Candidate Full Name:</label>
+                <input type="text" id="candidate-name" class="form-control" placeholder="E.g. Ashutosh Kumar">
+            </div>
+            <button class="btn" style="width:100%; padding:12px;" onclick="generateHallTicket()">Generate Hall Ticket & Proceed</button>
+        </div>
+    </div>
+
+    <!-- SCREEN 3: Instructions & Symbols Combo -->
+    <div id="screen-instructions" class="screen">
+        <div class="cbt-header">
+            <div class="header-top">
+                <div class="logo-box"><img src="https://imu.cbexams.com/IMUCET_MockTest_2026/images/logo.jpeg" alt="IMU" onerror="this.style.display='none'"></div>
+            </div>
+        </div>
+        <div class="container" style="max-width: 950px; height: 75vh; overflow-y: auto;">
+            <div style="background: #e6deca; padding: 10px; font-weight: bold; border: 1px solid var(--border);">Instructions, Terms & Conditions</div>
+            <div style="padding: 15px; border: 1px solid var(--border); border-top: none; font-size: 0.95rem; line-height: 1.6; margin-bottom: 20px;">
+                <p>1. This Question Paper contains <strong id="inst-total-q" style="color:blue"></strong> questions in all comprising the following parts:</p>
+                <div id="inst-table-container"></div>
+                <ul style="margin-left: 20px; margin-top: 10px;">
+                    <li>Each Correct Answer carries <strong style="color:red">1 Mark</strong>. Incorrect answer will carry a <strong style="color:blue">negative marking of 0.25 Mark</strong>.</li>
+                    <li>All questions will be in English Language.</li>
+                </ul>
+            </div>
+
+            <div style="background: #e6deca; padding: 10px; font-weight: bold; border: 1px solid var(--border);">Symbols Info</div>
+            <div style="padding: 15px; border: 1px solid var(--border); border-top: none; font-size: 0.95rem;">
+                <p>Please note the color coding for the question palette on the right side of the screen:</p>
+                <ul style="list-style: none; margin-top: 10px; display: flex; flex-direction: column; gap: 8px;">
+                    <li><span style="display:inline-block; width:20px; height:20px; line-height: 20px; background:blue; color:white; text-align:center; border-radius:4px; font-weight:bold;">1</span> Not Visited / Not Attempted</li>
+                    <li><span style="display:inline-block; width:20px; height:20px; line-height: 20px; background:green; color:white; text-align:center; border-radius: 4px; font-weight:bold;">2</span> Answered</li>
+                    <li><div style="position:relative; display:inline-block; width:20px; height:20px; line-height: 20px; background:red; color:white; border-radius:4px; font-weight:bold; text-align:center;">3<span style="position:absolute; bottom:-6px; left:50%; transform:translateX(-50%); color:black; font-size:10px;">▲</span></div> Marked for Review (Not Answered)</li>
+                    <li><div style="position:relative; display:inline-block; width:20px; height:20px; line-height: 20px; background:yellow; color:black; border-radius:4px; font-weight:bold; text-align:center;">4<span style="position:absolute; bottom:-6px; left:50%; transform:translateX(-50%); color:black; font-size:10px;">▲</span></div> Marked for Review (Answered & Evaluated)</li>
+                </ul>
+                <div style="margin-top:20px;">
+                    <label style="font-weight:bold; cursor:pointer;">
+                        <input type="checkbox" id="agree-start-check"> 
+                        I have read and understood the instructions. I agree to maintain Fullscreen mode and understand that switching tabs will terminate the exam.
+                    </label>
+                </div>
+                <div style="text-align: center; margin-top: 20px;">
+                    <button class="btn" id="start-exam-btn" onclick="startExam()" disabled style="padding: 10px 40px;">I Agree - Start Test</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCREEN 4: Actual CBT Engine -->
+    <div id="screen-cbt" class="screen">
+        <div class="cbt-header">
+            <div class="header-top">
+                <div class="logo-box">
+                    <img src="https://imu.cbexams.com/IMUCET_MockTest_2026/images/logo.jpeg" alt="IMU Logo" onerror="this.style.display='none'">
+                    <div class="exam-title-text">INDIAN MARITIME UNIVERSITY (DUMMY/MOCK TEST)</div>
+                </div>
+                <div class="timer-container">
+                    <div style="display:flex; flex-direction:column;">
+                        <div class="timer-label">Time Left</div>
+                        <div class="timer-box" id="timer-display">00:00:00</div>
+                    </div>
+                </div>
+            </div>
+            <div class="header-sub">
+                <div>UG Technical Courses(B.Tech,B.Sc.,DNS)</div>
+                <div class="zoom-controls">
+                    <button onclick="document.body.style.zoom='110%'">Zoom (+)</button>
+                    <button onclick="document.body.style.zoom='100%'">Zoom (-)</button>
+                </div>
+                <div id="cbt-ht-name">Hallticket Number : XXXXX [Candidate Name]</div>
+            </div>
+        </div>
+        
+        <div class="exam-layout">
+            <!-- Modals -->
+            <div id="instructions-modal" class="custom-modal">
+                <div class="modal-content-box">
+                    <div class="modal-close"><a href="#" onclick="closeModal('instructions-modal'); return false;">✖</a></div>
+                    <div style="background: #e6deca; padding: 10px; font-weight: bold; border: 1px solid #ccc; font-family: Verdana; font-size: 13px;">Instructions, Terms & Conditions</div>
+                    <div style="padding: 15px; border: 1px solid #ccc; border-top: none; font-size: 13px; font-family: Verdana; line-height: 1.6;">
+                        <p>1. This Question Paper contains <strong id="modal-inst-total-q" style="color:blue"></strong> questions in all comprising the following parts:</p>
+                        <div id="modal-inst-table-container"></div>
+                        <ol start="2" style="margin-left: 20px; margin-top: 10px;">
+                            <li>Each Correct Answer carries <strong style="color:red">1 Mark</strong>. Each incorrect answer will carry a <strong style="color:blue">negative marking of 0.25 Mark</strong>.</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Highly Detailed Symbols Modal matched to reference images -->
+            <div id="symbols-modal" class="custom-modal">
+                <div class="modal-content-box" style="max-width: 900px; margin-top: 10px;">
+                    <div class="modal-close"><a href="#" onclick="closeModal('symbols-modal'); return false;">✖ Close</a></div>
+                    <h3 style="color: var(--imu-blue); margin-bottom: 10px; font-family: Verdana; font-size: 14px; text-align: center;">The different symbols used in the next pages are shown below. Please go through them and understand their meaning before you start the test.</h3>
+                    <table class="modal-table">
+                        <tr><th style="width:150px; text-align:center;">Symbol</th><th>Description</th></tr>
+                        <tr><td align="center"><input type="radio" disabled></td><td>Option Not chosen</td></tr>
+                        <tr><td align="center"><input type="radio" checked disabled></td><td>Option chosen as correct (By clicking on it again you can delete your option and choose another option if desired.)</td></tr>
+                        <tr><td align="center"><span style="display:inline-block; width:22px; height:22px; line-height: 22px; background:blue; color:white; border-radius:4px; font-weight:bold; font-family: Verdana; font-size: 12px;">1</span></td><td>Question number shown in blue color indicates that you have not yet attempted the question.</td></tr>
+                        <tr><td align="center"><span style="display:inline-block; width:22px; height:22px; line-height: 22px; background:green; color:white; border-radius:4px; font-weight:bold; font-family: Verdana; font-size: 12px;">1</span></td><td>Question number shown in green color indicates that you have answered the question.</td></tr>
+                        <tr><td align="center"><div style="position:relative; display:inline-block; width:22px; height:22px; line-height: 22px; background:red; color:white; border-radius:4px; font-weight:bold; font-family: Verdana; font-size: 12px;">1<span style="position:absolute; bottom:-7px; left:50%; transform:translateX(-50%); color:black; font-size:10px;">▲</span></div></td><td>You have not yet answered the question, but marked it for coming back for review later, if time permits.</td></tr>
+                        <tr><td align="center"><div style="position:relative; display:inline-block; width:22px; height:22px; line-height: 22px; background:yellow; color:black; border-radius:4px; font-weight:bold; font-family: Verdana; font-size: 12px;">1<span style="position:absolute; bottom:-7px; left:50%; transform:translateX(-50%); color:black; font-size:10px;">▲</span></div></td><td>You have answered the question, but marked it for review later, if time permits.</td></tr>
+                        <tr><td align="center"><img src="https://imu.cbexams.com/IMUCET_MockTest_2026/images/Next.png?v333" style="max-height: 25px;" alt="Next"></td><td>Clicking on this will take you to the next question.</td></tr>
+                        <tr><td align="center"><img src="https://imu.cbexams.com/IMUCET_MockTest_2026/images/Previous.png?v123" style="max-height: 25px;" alt="Previous"></td><td>Clicking on this will take you to the previous question.</td></tr>
+                        <tr><td align="center"><img src="https://imu.cbexams.com/IMUCET_MockTest_2026/images/markrev.png" style="max-height: 25px;" alt="Mark Review"></td><td>By clicking on this button, you can mark the question for review later. Please note that if you answer the question and mark for review, the question will be treated as answered and evaluated even if you do not review it.</td></tr>
+                        <tr><td align="center"><img src="https://imu.cbexams.com/IMUCET_MockTest_2026/images/unmarkrev.png?d" style="max-height: 25px;" alt="Unmark Review"></td><td>By clicking on this button, you can unmark the question for review</td></tr>
+                    </table>
+                </div>
+            </div>
+
+            <div id="submit-modal" class="custom-modal" style="z-index: 2000;">
+                <div class="modal-content-box" style="max-width: 400px; text-align: center;">
+                    <h3 style="color: #0f172a; margin-bottom: 10px; font-weight: 800; font-size: 20px;">Submit Exam?</h3>
+                    <p style="margin: 15px 0 25px; font-size: 14px; color:#475569;">Are you sure you want to final submit the test and generate the AI Report?</p>
+                    <button class="btn" style="background: #94a3b8; color: #fff; margin-right: 10px; border:none;" onclick="closeModal('submit-modal')">Cancel</button>
+                    <button class="btn" style="background: #10b981; border:none;" onclick="closeModal('submit-modal'); endExam();">Yes, Submit</button>
+                </div>
+            </div>
+
+            <div id="panel-toggle-btn" class="panel-toggle-btn" onclick="toggleSidePanel()">
+                <span id="toggle-arrow" class="arrow-icon">&#9654;</span>
+            </div>
+
+            <div class="main-panel" id="main-panel">
+                <div class="watermark-layer" id="watermark-layer"></div>
+                <div class="top-links">
+                    <span onclick="openModal('symbols-modal')">SYMBOLS</span>
+                    <span onclick="openModal('instructions-modal')">INSTRUCTIONS</span>
+                </div>
+                <div class="subjects-tab" id="subjects-tabs-container"></div>
+                
+                <div class="q-meta-bar">
+                    <span id="q-num-label">Question : 1</span>
+                </div>
+                
+                <div class="action-buttons">
+                    <button class="img-btn" onclick="markForReview()"><img src="https://imu.cbexams.com/IMUCET_MockTest_2026/images/markrev.png" alt="Mark for Review"></button>
+                    <button class="img-btn" onclick="clearResponse()"><img src="https://imu.cbexams.com/IMUCET_MockTest_2026/images/unmarkrev.png?d" alt="Clear Response"></button>
+                    <button class="img-btn" onclick="changeQuestion(-1)"><img src="https://imu.cbexams.com/IMUCET_MockTest_2026/images/Previous.png?v123" alt="Previous"></button>
+                    <button class="img-btn" onclick="saveAndNext()"><img src="https://imu.cbexams.com/IMUCET_MockTest_2026/images/Next.png?v333" alt="Save and Next"></button>
+                    <button class="btn" onclick="triggerManualSubmit()" style="background:#27ae60; border-color:#2ecc71; display:none;" id="submit-exam-btn">Submit Exam</button>
+                </div>
+
+                <div class="question-content" id="q-content-area">
+                    <div class="question-text-box" id="q-text"></div>
+                    <table class="options-table" id="options-table"></table>
+                </div>
+            </div>
+            
+            <div class="side-panel" id="side-panel">
+                <div class="side-header">
+                    Total Questions answered: <span class="tot-ans-badge" id="tot-ans-badge">0</span>
+                </div>
+                <div class="lang-select-bar">
+                    <div style="width: 25px;"></div>
+                    <div>Select Language: <select style="padding: 2px;"><option>English</option></select></div>
+                </div>
+                <div class="palette-title" id="current-sec-name">English</div>
+                <div class="palette-grid" id="palette-grid"></div>
+                
+                <div class="analysis-box">
+                    <table class="analysis-table">
+                        <thead><tr><th colspan="2" id="analysis-sec-title">Overall Analysis</th></tr></thead>
+                        <tbody>
+                            <tr><td>Answered</td><td class="val-bg" id="lg-ans">0</td></tr>
+                            <tr><td>Not Answered</td><td class="val-bg" id="lg-notans">0</td></tr>
+                            <tr><td>Mark for Review</td><td class="val-bg" id="lg-rev">0</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCREEN 5: Premium AI Analytics Dashboard & Answer Key -->
+    <div id="screen-result" class="screen premium-dashboard">
+        <div class="cbt-header" style="background:rgba(255,255,255,0.9); backdrop-filter:blur(10px); padding: 12px 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); position: sticky; top:0; z-index:100; border-bottom:1px solid #e2e8f0;">
+            <div style="display:flex; justify-content:space-between; align-items:center; max-width: 1200px; margin: 0 auto; width:100%;">
+                <div style="font-size: 1.3rem; font-weight: 900; color: #0f172a; letter-spacing: -0.5px;">IMUCET <span style="color:#3b82f6;">Premium Report</span></div>
+                <div style="display:flex; gap:12px;">
+                    <button class="btn" style="background:#fff; color:#475569; border-color:#cbd5e1; box-shadow:none;" onclick="window.location.reload()">Exit to Home</button>
+                    <button class="btn" id="pdf-download-btn" style="background:#2563eb; border-color:#1d4ed8;" onclick="downloadPDF()">Download Full Report PDF</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="dashboard-container" id="pdf-report-area">
+            
+            <div id="violation-banner" style="background: #fef2f2; color: #991b1b; border: 1px solid #f87171; padding: 15px; border-radius: 8px; font-weight: bold; margin-bottom: 25px; display: none; text-align: center; box-shadow: 0 4px 6px rgba(239,68,68,0.1);">
+                ⚠ EXAM DISCIPLINE WARNING: Unauthorized tab switches or window exits were detected. Exam was force submitted.
+            </div>
+
+            <!-- Dashboard Top: Header & KPIs -->
+            <div class="glass-card dash-header" style="background: linear-gradient(to right, #ffffff, #f8fafc);">
+                <div class="dash-title" id="res-name"></div>
+                <div class="dash-subtitle">Hall Ticket: <span id="res-ht"></span> | Generated: <span id="res-date"></span></div>
+            </div>
+
+            <div class="kpi-grid">
+                <div class="kpi-box">
+                    <div class="kpi-title">Performance Index</div>
+                    <div class="kpi-value" id="kpi-pi" style="color: #3b82f6;">0/10</div>
+                    <div class="kpi-sub">Overall AI Rating</div>
+                </div>
+                <div class="kpi-box">
+                    <div class="kpi-title">Total Score</div>
+                    <div class="kpi-value" id="res-score">0</div>
+                    <div class="kpi-sub" id="score-sub">Out of 0</div>
+                </div>
+                <div class="kpi-box">
+                    <div class="kpi-title">Accuracy</div>
+                    <div class="kpi-value" id="res-acc" style="color: #10b981;">0%</div>
+                    <div class="kpi-sub">Correct vs Attempted</div>
+                </div>
+                <div class="kpi-box">
+                    <div class="kpi-title">Discipline Rating</div>
+                    <div class="kpi-value" id="kpi-focus" style="color: #8b5cf6;">100%</div>
+                    <div class="kpi-sub">Exam Integrity</div>
+                </div>
+            </div>
+
+            <!-- Middle Section: Flex Row for Insights and Charts -->
+            <div class="flex-row">
+                <div class="flex-col glass-card">
+                    <div class="section-title">AI Behavioral Insights</div>
+                    <div class="insights-grid" id="insights-container">
+                        <!-- Dynamic insights injected here -->
+                    </div>
+                </div>
+                <div class="flex-col glass-card">
+                    <div class="section-title">Overall Accuracy Breakdown</div>
+                    <div class="chart-container">
+                        <canvas id="pieChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex-row">
+                <div class="flex-col glass-card" style="flex:2">
+                    <div class="section-title">Subject-Wise Analytics</div>
+                    <div class="chart-container" style="height: 300px;">
+                        <canvas id="barChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Response Sheet Section -->
+            <div class="glass-card" style="padding-top: 30px;">
+                <div class="section-title">Detailed Response Sheet & Answer Key</div>
+                
+                <div class="filter-bar" id="report-filter-bar">
+                    <button class="filter-btn active" onclick="filterResponses('all')">All Questions</button>
+                    <button class="filter-btn" onclick="filterResponses('wrong')">Practice Incorrect</button>
+                    <button class="filter-btn" onclick="filterResponses('skipped')">Review Skipped</button>
+                    <button class="filter-btn" onclick="filterResponses('marked')">Marked for Review</button>
+                </div>
+
+                <div class="response-list" id="response-sheet-container">
+                    <!-- Response Cards generated dynamically -->
+                </div>
+            </div>
+            
+            <div style="text-align: center; margin-top: 20px; font-size: 12px; color: #94a3b8; padding-bottom: 20px;">
+                Made with ❤️ and ☕ by <a href="https://www.instagram.com/4zion69/" target="_blank" style="color: #94a3b8; text-decoration: none;">@royverse</a>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // --- PROMPT TEXT FOR AUTO-COPY ---
+        const aiPromptText = `You are an advanced AI-powered IMUCET CBT mock test generator and exam processing engine.
+Your task is to create a COMPLETE, READY-TO-USE IMUCET mock test JSON for a CBT website.
+
+==================================================
+INPUT SOURCES
+The user may provide ANY type of source including:
+
+Images
+Screenshots
+PDFs
+DOCX files
+TXT files
+YouTube links
+Video files
+Video links
+Raw text
+Notes
+Scanned papers
+OCR text
+Mixed sources
+You MUST intelligently process ALL uploaded or linked content.
+
+==================================================
+STEP 1 — EXTRACT QUESTIONS
+Extract ALL possible questions from the provided sources.
+Requirements:
+
+Preserve original wording
+Preserve equations
+Preserve diagrams if possible as text descriptions
+Preserve options exactly
+Detect answer keys if present
+Ignore irrelevant text
+Remove duplicates
+Clean formatting errors
+Correct OCR mistakes intelligently
+==================================================
+STEP 2 — DETECT SUBJECTS
+Automatically classify questions into:
+
+English
+General Aptitude
+Mathematics
+Physics
+Chemistry
+If needed also classify:
+
+chapter
+topic
+difficulty level
+==================================================
+STEP 3 — VERIFY ANSWERS
+IMPORTANT:
+Do NOT trust provided answer keys blindly.
+For EVERY question:
+
+independently solve or verify the answer
+correct wrong answer keys
+detect ambiguous questions
+detect invalid questions
+If no answer is provided:
+
+solve the question fully
+generate the correct answer
+==================================================
+STEP 4 — COMPLETE IMUCET PATTERN
+The final mock test MUST follow IMUCET pattern:
+
+English → 40 Questions
+General Aptitude → 40 Questions
+Mathematics → 50 Questions
+Physics → 50 Questions
+Chemistry → 20 Questions
+Total = 200 Questions
+
+==================================================
+STEP 5 — AUTO ADD QUESTIONS IF REQUIRED
+If uploaded sources do NOT contain enough valid questions:
+
+intelligently add additional IMUCET-style questions
+prioritize real previous year question patterns
+generate realistic questions matching IMUCET difficulty and style
+maintain proper subject balance
+Prefer:
+
+PYQ-style questions
+concept-based questions
+realistic competitive exam patterns
+==================================================
+STEP 6 — DIFFICULTY BALANCING
+Balance questions into:
+
+Easy
+Medium
+Hard
+Ensure realistic exam distribution.
+
+==================================================
+STEP 7 — QUESTION METADATA
+For EVERY question include:
+
+id
+subject
+chapter
+topic
+difficulty
+question
+options
+correctAnswer
+==================================================
+STEP 8 — FINAL JSON FORMAT
+Output STRICT VALID JSON ONLY.
+DO NOT:
+
+add markdown
+add explanations
+add notes
+add comments
+add formatting text
+add analysis
+OUTPUT ONLY THE FINAL JSON.
+
+==================================================
+FINAL JSON FORMAT
+{
+"testName": "IMUCET FULL MOCK TEST",
+"duration": 180,
+"negativeMarking": 0.25,
+"sections": [
+{
+"name": "English",
+"questions": [
+{
+"id": 1,
+"subject": "English",
+"chapter": "Grammar",
+"topic": "Sentence Correction",
+"difficulty": "easy",
+      "question": "Question text",
+
+      "options": [
+        "Option A",
+        "Option B",
+        "Option C",
+        "Option D"
+      ],
+
+      "correctAnswer": 0
+    }
+  ]
+}
+]
+}
+==================================================
+IMPORTANT RULES
+correctAnswer must be:
+0 = Option A
+1 = Option B
+2 = Option C
+3 = Option D
+Ensure ALL JSON is syntactically valid.
+Ensure NO trailing commas.
+Ensure ALL quotes are valid.
+Ensure IDs are unique.
+Ensure no duplicate questions.
+Ensure all sections contain correct number of questions.
+Ensure final total = 200 questions.
+==================================================
+QUALITY REQUIREMENTS
+The final paper should feel like:
+
+real IMUCET exam
+professionally curated mock test
+balanced competitive exam
+realistic timing and difficulty
+==================================================
+FINAL OUTPUT REQUIREMENT
+RETURN ONLY RAW JSON.
+NO markdown.
+NO explanations.
+NO introductory text.
+NO analysis.
+ONLY FINAL READY-TO-PASTE JSON.`;
+
+        // Configure Chart.js Global Typography Defaults for Modern Premium Look
+        Chart.defaults.font.family = "'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif";
+        Chart.defaults.color = '#64748b';
+        Chart.defaults.scale.grid.color = '#f1f5f9';
+        Chart.defaults.plugins.tooltip.backgroundColor = 'rgba(15, 23, 42, 0.9)';
+        Chart.defaults.plugins.tooltip.padding = 12;
+        Chart.defaults.plugins.tooltip.cornerRadius = 8;
+        Chart.defaults.plugins.tooltip.titleFont = { size: 14, weight: 'bold' };
+        Chart.defaults.plugins.tooltip.bodyFont = { size: 13 };
+
+        // --- 1. CORE STATE VARIABLES ---
+        let examConfig = null;
+        let flattenedQs = []; 
+        let sectionsMeta = []; 
+        let candidateInfo = { name: '', ht: '' };
+        
+        let currentState = {
+            activeQIndex: 0,
+            activeSecIndex: 0,
+            timeRemaining: 0,
+            intervalId: null,
+            isTestActive: false,
+            violationCount: 0
+        };
+
+        let responses = []; 
+        let testStartTime = null;
+
+        let pieChartInst = null;
+        let barChartInst = null;
+
+        // --- 2. SETUP & INIT ---
+        document.getElementById('agree-start-check').addEventListener('change', (e) => {
+            document.getElementById('start-exam-btn').disabled = !e.target.checked;
+        });
+
+        function switchScreen(id) {
+            document.querySelectorAll('.screen').forEach(el => el.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+        }
+
+        function copyPrompt() {
+            const tempArea = document.createElement("textarea");
+            tempArea.value = aiPromptText;
+            document.body.appendChild(tempArea);
+            tempArea.select();
+            try {
+                document.execCommand("copy");
+                const btn = event.target;
+                const originalText = btn.innerText;
+                btn.innerText = "Copied ✓";
+                btn.style.background = "#10b981";
+                btn.style.borderColor = "#059669";
+                setTimeout(() => {
+                    btn.innerText = originalText;
+                    btn.style.background = "#f59e0b";
+                    btn.style.borderColor = "#d97706";
+                }, 2000);
+            } catch (err) {
+                alert("Failed to copy prompt automatically.");
+            }
+            document.body.removeChild(tempArea);
+        }
+
+        function validateJSON() {
+            const raw = document.getElementById('json-input').value;
+            const errDiv = document.getElementById('json-error');
+            errDiv.innerText = "";
+            try {
+                if(!raw.trim()) throw new Error("Input is empty.");
+                const data = JSON.parse(raw);
+                if(!data.sections) throw new Error("Missing 'sections' array.");
+                
+                examConfig = data;
+                processExamData();
+                switchScreen('screen-candidate');
+            } catch(e) {
+                errDiv.innerText = "JSON Error: " + e.message;
+            }
+        }
+
+        function processExamData() {
+            flattenedQs = [];
+            sectionsMeta = [];
+            responses = [];
+            let globalCounter = 0;
+
+            examConfig.sections.forEach((sec, sIdx) => {
+                sectionsMeta.push({ name: sec.name, sub: sec.subject || sec.name, startIdx: globalCounter, count: sec.questions.length });
+                sec.questions.forEach((q) => {
+                    if(!q.difficulty) q.difficulty = "Medium";
+                    else q.difficulty = q.difficulty.charAt(0).toUpperCase() + q.difficulty.slice(1).toLowerCase();
+                    if(!q.chapter) q.chapter = "General";
+
+                    flattenedQs.push({ globalId: globalCounter, sectionIdx: sIdx, data: q });
+                    
+                    responses.push({ 
+                        status: 0, selectedOptId: null, timeSpentSec: 0, revisits: 0, answerChanges: 0, firstOptId: null
+                    });
+                    globalCounter++;
+                });
+            });
+
+            document.getElementById('inst-total-q').innerText = flattenedQs.length;
+            document.getElementById('modal-inst-total-q').innerText = flattenedQs.length;
+            
+            const table = document.createElement('table');
+            table.style.width = '100%'; table.style.borderCollapse = 'collapse';
+
+            examConfig.sections.forEach(s => {
+                const trContent = `<tr><td style="border:1px solid #ccc; padding:5px; font-weight:bold;">${s.name}</td><td style="border:1px solid #ccc; padding:5px;">${s.subject || s.name} (${s.questions.length} Questions)</td></tr>`;
+                table.innerHTML += trContent;
+            });
+
+            document.getElementById('inst-table-container').innerHTML = '';
+            document.getElementById('inst-table-container').appendChild(table);
+            
+            // For modal, we need an exact replica, clone node to be safe
+            document.getElementById('modal-inst-table-container').innerHTML = '';
+            document.getElementById('modal-inst-table-container').appendChild(table.cloneNode(true));
+        }
+
+        function generateHallTicket() {
+            const nameInput = document.getElementById('candidate-name').value.trim();
+            candidateInfo.name = nameInput || 'Candidate Name';
+            const rand = Math.floor(10000000 + Math.random() * 90000000);
+            candidateInfo.ht = `IMU-${rand}`;
+            
+            document.getElementById('cbt-ht-name').innerText = `Hallticket Number : ${candidateInfo.ht} [${candidateInfo.name}]`;
+            
+            const wmText = `MOCKTEST_${candidateInfo.ht}`;
+            const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='450' height='300'>
+                <text x='50%' y='50%' transform='translate(225,150) rotate(-35) translate(-225,-150)'
+                      font-size='32' font-family='Arial' fill='rgba(0,0,0,0.03)' font-weight='bold' text-anchor='middle'>${wmText}</text></svg>`;
+            document.getElementById('watermark-layer').style.backgroundImage = `url("data:image/svg+xml;base64,${btoa(svg)}")`;
+
+            switchScreen('screen-instructions');
+        }
+
+        // --- 3. EXAM ENGINE ---
+        async function startExam() {
+            try {
+                if(document.documentElement.requestFullscreen) {
+                    await document.documentElement.requestFullscreen().catch(e=>console.log(e));
+                }
+            } catch(e) {}
+
+            testStartTime = Date.now();
+            currentState.isTestActive = true;
+            currentState.timeRemaining = (examConfig.duration || 180) * 60;
+            currentState.activeQIndex = 0;
+            currentState.activeSecIndex = 0;
+            currentState.violationCount = 0;
+
+            setupSecurity();
+            buildSectionTabs();
+            switchScreen('screen-cbt');
+            
+            renderQuestion();
+            startTimer();
+        }
+
+        function setupSecurity() {
+            const handleViolation = () => { if (currentState.isTestActive) triggerViolation(); };
+
+            document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') handleViolation(); });
+            window.addEventListener('blur', handleViolation);
+            document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement) handleViolation(); });
+        }
+
+        function triggerViolation() {
+            if(!currentState.isTestActive) return;
+            currentState.violationTriggered = true;
+            currentState.violationCount++;
+            currentState.isTestActive = false; 
+            endExam(); 
+        }
+
+        function formatTime(secs) {
+            const h = Math.floor(secs / 3600).toString().padStart(2, '0');
+            const m = Math.floor((secs % 3600) / 60).toString().padStart(2, '0');
+            const s = (secs % 60).toString().padStart(2, '0');
+            return `${h}:${m}:${s}`;
+        }
+
+        function startTimer() {
+            const tDisp = document.getElementById('timer-display');
+            tDisp.innerText = formatTime(currentState.timeRemaining);
+            
+            currentState.intervalId = setInterval(() => {
+                currentState.timeRemaining--;
+                tDisp.innerText = formatTime(currentState.timeRemaining);
+                if(currentState.isTestActive) responses[currentState.activeQIndex].timeSpentSec++;
+                
+                if(currentState.timeRemaining <= 10) { document.getElementById('submit-exam-btn').style.display = 'inline-block'; }
+                if (currentState.timeRemaining <= 0) endExam();
+            }, 1000);
+        }
+
+        function buildSectionTabs() {
+            const container = document.getElementById('subjects-tabs-container');
+            container.innerHTML = '';
+            sectionsMeta.forEach((sec, idx) => {
+                const div = document.createElement('div');
+                div.className = `part-tab ${idx === 0 ? 'active' : ''}`;
+                div.id = `tab-btn-${idx}`;
+                div.innerHTML = `<div class="part-title">${sec.name}</div><div class="part-sub">${sec.sub}</div>`;
+                div.onclick = () => { handleNavigate(sec.startIdx); };
+                container.appendChild(div);
+            });
+        }
+
+        function handleNavigate(newIdx) {
+            if (newIdx < 0 || newIdx >= flattenedQs.length) return;
+            if (newIdx !== currentState.activeQIndex) responses[newIdx].revisits++;
+            currentState.activeQIndex = newIdx;
+            renderQuestion();
+        }
+
+        function changeQuestion(direction) {
+            handleNavigate(currentState.activeQIndex + direction);
+        }
+
+        function renderQuestion() {
+            const gIdx = currentState.activeQIndex;
+            const qObj = flattenedQs[gIdx];
+            const secIdx = qObj.sectionIdx;
+            const resp = responses[gIdx];
+
+            if (resp.status === 0) resp.status = 1;
+
+            document.querySelectorAll('.part-tab').forEach(b => b.classList.remove('active'));
+            document.getElementById(`tab-btn-${secIdx}`).classList.add('active');
+            
+            document.getElementById('current-sec-name').innerText = sectionsMeta[secIdx].sub;
+            document.getElementById('q-num-label').innerText = `Question : ${(gIdx - sectionsMeta[secIdx].startIdx) + 1}  [Difficulty: ${qObj.data.difficulty}]`;
+            document.getElementById('q-text').innerText = qObj.data.question;
+
+            const optTable = document.getElementById('options-table');
+            optTable.innerHTML = '';
+            qObj.data.options.forEach((optStr, oIdx) => {
+                const tr = document.createElement('tr');
+                const isChecked = (resp.selectedOptId === oIdx);
+                tr.innerHTML = `<td><input type="radio" name="opt" value="${oIdx}" onchange="cacheOption(${oIdx})" ${isChecked ? 'checked' : ''}></td><td>${optStr}</td>`;
+                optTable.appendChild(tr);
+            });
+
+            buildPalette(secIdx);
+            updateAnalysisTable();
+        }
+
+        function cacheOption(optId) {
+            const r = responses[currentState.activeQIndex];
+            if (r.firstOptId === null) r.firstOptId = optId; 
+            if (r.selectedOptId !== null && r.selectedOptId !== optId) r.answerChanges++; 
+            r.selectedOptId = optId;
+        }
+
+        function buildPalette(secIdx) {
+            const pGrid = document.getElementById('palette-grid');
+            pGrid.innerHTML = '';
+            const sec = sectionsMeta[secIdx];
+            for(let i = sec.startIdx; i < sec.startIdx + sec.count; i++) {
+                const btn = document.createElement('button');
+                btn.className = `pal-btn ${getPaletteClass(responses[i].status)}`;
+                btn.innerText = (i - sec.startIdx) + 1;
+                btn.onclick = () => handleNavigate(i);
+                pGrid.appendChild(btn);
+            }
+        }
+
+        function getPaletteClass(status) {
+            switch(status) {
+                case 1: return 'not-answered';
+                case 2: return 'answered';
+                case 3: return 'review';
+                case 4: return 'answered-review';
+                default: return 'not-attempted'; 
+            }
+        }
+
+        function updateAnalysisTable() {
+            let counts = { ans:0, notans:0, rev:0 };
+            for(let i = 0; i < flattenedQs.length; i++) {
+                let st = responses[i].status;
+                if(st===1 || st===0) counts.notans++;
+                if(st===2 || st===4) counts.ans++;
+                if(st===3 || st===4) counts.rev++;
+            }
+            document.getElementById('lg-ans').innerText = counts.ans;
+            document.getElementById('lg-notans').innerText = counts.notans;
+            document.getElementById('lg-rev').innerText = counts.rev;
+            document.getElementById('tot-ans-badge').innerText = counts.ans;
+        }
+
+        function clearResponse() {
+            const r = responses[currentState.activeQIndex];
+            if(r.selectedOptId !== null) r.answerChanges++;
+            r.selectedOptId = null;
+            r.status = 1; 
+            renderQuestion(); 
+        }
+
+        function saveAndNext() { commitState(true); handleNavigate(currentState.activeQIndex + 1); }
+        function markForReview() { commitState(false); handleNavigate(currentState.activeQIndex + 1); }
+        function commitState(isSave) {
+            const r = responses[currentState.activeQIndex];
+            if (r.selectedOptId !== null) r.status = isSave ? 2 : 4; 
+            else r.status = isSave ? 1 : 3; 
+        }
+
+        function triggerManualSubmit() { openModal('submit-modal'); }
+
+        let isSidePanelOpen = true;
+        function toggleSidePanel() {
+            const sidePanel = document.getElementById('side-panel');
+            const btn = document.getElementById('panel-toggle-btn');
+            const arrow = document.getElementById('toggle-arrow');
+            isSidePanelOpen = !isSidePanelOpen;
+            if(isSidePanelOpen) { sidePanel.style.display = 'flex'; btn.style.right = '320px'; arrow.innerHTML = '&#9654;'; } 
+            else { sidePanel.style.display = 'none'; btn.style.right = '0px'; arrow.innerHTML = '&#9664;'; }
+        }
+
+        function openModal(id) { document.getElementById(id).style.display = 'block'; }
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
+        // --- 4. ADVANCED ANALYTICS & DETAILED RESPONSE SHEET ---
+        function endExam() {
+            clearInterval(currentState.intervalId);
+            currentState.isTestActive = false;
+            window.onblur = null;
+            if(document.fullscreenElement) document.exitFullscreen().catch(()=>{});
+            switchScreen('screen-result');
+            generateAdvancedReport();
+        }
+
+        function generateAdvancedReport() {
+            let globalAtt = 0, globalCor = 0, globalWr = 0, globalScore = 0;
+            const negM = examConfig.negativeMarking || 0.25;
+
+            let secData = {};
+            let guessedCount = 0;
+            let overthoughtCount = 0;
+            let hesitationChanges = 0;
+
+            sectionsMeta.forEach(s => { secData[s.sub] = { name: s.sub, att:0, cor:0, wr:0, score:0, total:s.count }; });
+
+            responses.forEach((r, idx) => {
+                const qObj = flattenedQs[idx];
+                const subj = sectionsMeta[qObj.sectionIdx].sub;
+                const isAttempted = (r.status === 2 || r.status === 4) && r.selectedOptId !== null;
+
+                hesitationChanges += r.answerChanges;
+                let isCorrect = false;
+
+                if (isAttempted) {
+                    globalAtt++;
+                    secData[subj].att++;
+                    if (r.selectedOptId === qObj.data.correctAnswer) {
+                        globalCor++; secData[subj].cor++; secData[subj].score += 1; globalScore += 1;
+                        isCorrect = true;
+                    } else {
+                        globalWr++; secData[subj].wr++; secData[subj].score -= negM; globalScore -= negM;
+                    }
+                    if (r.timeSpentSec < 15 && !isCorrect) guessedCount++;
+                    if (r.timeSpentSec > 90) overthoughtCount++;
+                }
+            });
+
+            // 1. KPI Calculations
+            const accuracyStr = globalAtt > 0 ? ((globalCor / globalAtt) * 100).toFixed(1) : "0";
+            const accuracy = parseFloat(accuracyStr);
+            const maxScore = flattenedQs.length;
+            
+            let disciplineScore = Math.max(10 - (currentState.violationCount * 2), 0);
+            let accScore = (accuracy / 100) * 10;
+            let pi = ((accScore * 0.5) + ((globalScore/maxScore)*10 * 0.3) + (disciplineScore * 0.2)).toFixed(1);
+            if(pi < 0) pi = 0;
+
+            document.getElementById('res-name').innerText = candidateInfo.name;
+            document.getElementById('res-ht').innerText = candidateInfo.ht;
+            document.getElementById('res-date').innerText = new Date().toLocaleString();
+            
+            document.getElementById('kpi-pi').innerText = `${pi}/10`;
+            document.getElementById('res-score').innerText = globalScore.toFixed(2);
+            document.getElementById('score-sub').innerText = `Out of ${maxScore}`;
+            document.getElementById('res-acc').innerText = accuracy + '%';
+            document.getElementById('kpi-focus').innerText = `${disciplineScore * 10}%`;
+
+            if (currentState.violationTriggered || currentState.violationCount > 0) {
+                document.getElementById('violation-banner').style.display = 'block';
+                document.getElementById('kpi-focus').style.color = '#ef4444';
+            }
+
+            // 2. Intelligent Recommendations
+            generateAIInsights(accuracy, guessedCount, overthoughtCount, hesitationChanges, secData);
+
+            // 3. Response Sheet Engine
+            renderResponseSheet();
+
+            // 4. Charts Generation
+            try {
+                if (typeof Chart !== 'undefined') {
+                    renderAdvancedCharts(globalCor, globalWr, flattenedQs.length - globalAtt, secData);
+                } else {
+                    document.querySelectorAll('.chart-container').forEach(el => el.innerHTML = 'Charts unavailable');
+                }
+            } catch(e) { console.error("Chart rendering failed", e); }
+        }
+
+        function generateAIInsights(acc, guess, over, hes, secData) {
+            const container = document.getElementById('insights-container');
+            container.innerHTML = '';
+            
+            const addInsight = (title, text, color, icon) => {
+                container.innerHTML += `
+                    <div class="insight-box" style="border-left-color: ${color}">
+                        <div class="insight-icon">${icon}</div>
+                        <div class="insight-content"><h4>${title}</h4><p>${text}</p></div>
+                    </div>`;
+            };
+
+            if(acc < 50) addInsight("Accuracy Alert", `Your accuracy is ${acc}%. Focus on conceptual understanding.`, "#ef4444", "🎯");
+            else if(acc > 80) addInsight("Excellent Accuracy", `You have a high accuracy rate (${acc}%). Increase speed slightly.`, "#10b981", "🌟");
+            else addInsight("Stable Accuracy", "Good balance. Room to minimize negative marks.", "#3b82f6", "⚖️");
+
+            if(guess >= 2) addInsight("Blind Guessing", `Likely guessed ${guess} questions incorrectly.`, "#f59e0b", "🎲");
+            if(over >= 2) addInsight("Overthinking", `Spent excessive time on ${over} questions. Learn to skip.`, "#8b5cf6", "⏱️");
+
+            let weakestSub = null, weakestScore = 999;
+            Object.values(secData).forEach(s => {
+                let sAcc = s.att > 0 ? s.cor/s.att : 0;
+                if(sAcc < weakestScore) { weakestScore = sAcc; weakestSub = s.name; }
+            });
+            if(weakestSub) addInsight("Focus Area", `Your weakest subject appears to be ${weakestSub}.`, "#ec4899", "📚");
+        }
+
+        // FULL RESPONSE SHEET ENGINE
+        function renderResponseSheet() {
+            const container = document.getElementById('response-sheet-container');
+            let html = '';
+
+            responses.forEach((r, idx) => {
+                const qObj = flattenedQs[idx];
+                const qData = qObj.data;
+                const subj = sectionsMeta[qObj.sectionIdx].sub;
+                const isAttempted = (r.status === 2 || r.status === 4) && r.selectedOptId !== null;
+                const isCorrect = isAttempted && r.selectedOptId === qData.correctAnswer;
+                const isReview = (r.status === 3 || r.status === 4);
+
+                let badgeHtml = '';
+                let filterType = 'all';
+
+                if (!isAttempted) {
+                    badgeHtml = '<span class="badge skipped">⚪ Skipped</span>';
+                    filterType = 'skipped';
+                } else if (isCorrect) {
+                    badgeHtml = '<span class="badge correct">🟢 Correct</span>';
+                    filterType = 'correct';
+                } else {
+                    badgeHtml = '<span class="badge wrong">🔴 Incorrect</span>';
+                    filterType = 'wrong';
+                }
+
+                if (isReview) {
+                    badgeHtml += ' <span class="badge review">🟡 Marked for Review</span>';
+                    filterType += ' marked'; 
+                }
+
+                let optionsHtml = '';
+                qData.options.forEach((opt, oIdx) => {
+                    let optClass = 'q-opt';
+                    let optLabel = '';
+                    
+                    if (oIdx === qData.correctAnswer) {
+                        optClass += ' correct';
+                        optLabel = ' <span style="float:right;">✅ Correct Answer</span>';
+                    } else if (isAttempted && r.selectedOptId === oIdx) {
+                        optClass += ' wrong';
+                        optLabel = ' <span style="float:right;">❌ Your Answer</span>';
+                    }
+                    
+                    optionsHtml += `<div class="${optClass}"><span>${String.fromCharCode(65+oIdx)}. ${opt}</span> ${optLabel}</div>`;
+                });
+
+                html += `
+                <div class="q-card" data-filter="${filterType}">
+                    <div class="q-header">
+                        <div class="q-header-left">Q${idx + 1}. ${subj} | ${qData.chapter} | Diff: ${qData.difficulty}</div>
+                        <div class="q-header-right">${badgeHtml}</div>
+                    </div>
+                    <div class="q-body">
+                        <div class="q-text">${qData.question}</div>
+                        <div class="q-options">${optionsHtml}</div>
+                    </div>
+                    <div class="q-footer">
+                        <div>Time Spent: ${r.timeSpentSec}s</div>
+                        <div>Changes: ${r.answerChanges} | Revisits: ${r.revisits}</div>
+                    </div>
+                </div>`;
+            });
+            
+            container.innerHTML = html;
+        }
+
+        // Filtering Logic for Action Buttons
+        function filterResponses(type) {
+            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            const cards = document.querySelectorAll('.q-card');
+            cards.forEach(card => {
+                if (type === 'all' || card.getAttribute('data-filter').includes(type)) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+
+        function renderAdvancedCharts(cor, wr, skip, secData) {
+            if(pieChartInst) pieChartInst.destroy();
+            if(barChartInst) barChartInst.destroy();
+
+            const chartOptions = {
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: { duration: 1500, easing: 'easeOutQuart' },
+                plugins: {
+                    legend: { position: 'bottom', labels: { usePointStyle: true, padding: 20 } },
+                    tooltip: { mode: 'index', intersect: false, animation: { duration: 200 } }
+                }
+            };
+
+            const pieCtx = document.getElementById('pieChart').getContext('2d');
+            pieChartInst = new Chart(pieCtx, {
+                type: 'doughnut',
+                data: { 
+                    labels: ['Correct', 'Incorrect', 'Skipped'], 
+                    datasets: [{ 
+                        data: [cor, wr, skip], 
+                        backgroundColor: ['#10b981', '#ef4444', '#cbd5e1'], 
+                        borderWidth: 2,
+                        borderColor: '#ffffff',
+                        hoverOffset: 4
+                    }] 
+                },
+                options: { ...chartOptions, cutout: '75%' }
+            });
+
+            const barCtx = document.getElementById('barChart').getContext('2d');
+            
+            const blueGradient = barCtx.createLinearGradient(0, 0, 0, 300);
+            blueGradient.addColorStop(0, 'rgba(59, 130, 246, 0.9)');
+            blueGradient.addColorStop(1, 'rgba(59, 130, 246, 0.3)');
+
+            const greyGradient = barCtx.createLinearGradient(0, 0, 0, 300);
+            greyGradient.addColorStop(0, 'rgba(148, 163, 184, 0.8)');
+            greyGradient.addColorStop(1, 'rgba(148, 163, 184, 0.2)');
+
+            const subLabels = Object.keys(secData);
+            const scores = Object.values(secData).map(s => s.score);
+            const attempts = Object.values(secData).map(s => s.att);
+
+            barChartInst = new Chart(barCtx, {
+                type: 'bar',
+                data: {
+                    labels: subLabels,
+                    datasets: [
+                        { label: 'Net Score', data: scores, backgroundColor: blueGradient, borderColor: '#3b82f6', borderWidth: 1, borderRadius: 6, hoverBackgroundColor: '#2563eb' },
+                        { label: 'Total Attempted', data: attempts, backgroundColor: greyGradient, borderColor: '#94a3b8', borderWidth: 1, borderRadius: 6, hoverBackgroundColor: '#64748b' }
+                    ]
+                },
+                options: { ...chartOptions, scales: { y: { beginAtZero: true, grid: { color: '#f1f5f9' } }, x: { grid: { display: false } } } }
+            });
+        }
+
+        // OPTIMIZED PDF GENERATION FOR MASSIVE DOMS
+        async function downloadPDF() {
+            const btn = document.getElementById('pdf-download-btn');
+            btn.innerText = "Generating PDF (Please wait)...";
+            btn.disabled = true;
+            
+            // 1. Show all questions to capture them in PDF
+            filterResponses('all');
+            document.querySelectorAll('.filter-btn')[0].classList.add('active'); 
+
+            // 2. Pre-convert charts to toDataURL() images to prevent blank canvas issues in html2canvas
+            const chartIds = ['pieChart', 'barChart'];
+            chartIds.forEach(id => {
+                const canvas = document.getElementById(id);
+                if (canvas) {
+                    const img = document.createElement('img');
+                    img.id = id + '-img';
+                    img.src = canvas.toDataURL('image/png');
+                    img.style.width = '100%';
+                    img.style.maxHeight = canvas.style.height || '280px';
+                    img.style.objectFit = 'contain';
+                    canvas.style.display = 'none';
+                    canvas.parentNode.insertBefore(img, canvas);
+                }
+            });
+
+            // Add PDF Exporting class to strictly compress UI styling sizes specifically for the generation cycle
+            document.body.classList.add('pdf-exporting');
+
+            try {
+                const { jsPDF } = window.jspdf;
+                const pdf = new jsPDF('p', 'pt', 'a4');
+                const pdfWidth = pdf.internal.pageSize.getWidth();
+                const margin = 20;
+                const renderWidth = pdfWidth - (margin * 2);
+
+                const captureAndAdd = async (element) => {
+                    const canvas = await html2canvas(element, { scale: 1.5, useCORS: true, logging: false });
+                    const imgData = canvas.toDataURL('image/jpeg', 0.8);
+                    const imgProps = pdf.getImageProperties(imgData);
+                    const imgHeight = (imgProps.height * renderWidth) / imgProps.width;
+                    pdf.addImage(imgData, 'JPEG', margin, margin, renderWidth, imgHeight);
+                };
+
+                // Create an off-screen container for rendering chunks
+                const renderBox = document.createElement('div');
+                renderBox.style.width = '800px';
+                renderBox.style.padding = '20px';
+                renderBox.style.background = '#fff';
+                renderBox.style.position = 'absolute';
+                renderBox.style.left = '-9999px';
+                renderBox.style.top = '0';
+                renderBox.classList.add('premium-dashboard', 'pdf-exporting');
+                document.body.appendChild(renderBox);
+
+                // --- CHUNK 1: Header and Dashboards ---
+                renderBox.innerHTML = `
+                    <div style="text-align:center; margin-bottom:20px; border-bottom:2px solid #e2e8f0; padding-bottom:15px;">
+                        <h2 style="font-size: 26px; color: #0f172a; margin-bottom:5px; font-weight: 800;">IMUCET Premium Report</h2>
+                        <p style="color: #64748b; font-size:14px; font-weight: 600;">Candidate: ${candidateInfo.name} | Hall Ticket: ${candidateInfo.ht} | Date: ${new Date().toLocaleString()}</p>
+                    </div>
+                `;
+                renderBox.appendChild(document.querySelector('.kpi-grid').cloneNode(true));
+                renderBox.appendChild(document.querySelectorAll('.flex-row')[0].cloneNode(true));
+                renderBox.appendChild(document.querySelectorAll('.flex-row')[1].cloneNode(true));
+                
+                await captureAndAdd(renderBox);
+
+                // --- CHUNK 2...N: Response Sheets (Batched to prevent html2canvas memory crash) ---
+                const cards = document.querySelectorAll('.q-card');
+                const CHUNK_SIZE = 8; // Safely fits an A4 page without exceeding memory
+                
+                for (let i = 0; i < cards.length; i += CHUNK_SIZE) {
+                    pdf.addPage();
+                    renderBox.innerHTML = '';
+                    
+                    if (i === 0) {
+                        renderBox.innerHTML = `<h3 style="font-size:18px; font-weight:800; color:#1e293b; margin-bottom:15px; border-bottom:2px solid #e2e8f0; padding-bottom:10px;">Detailed Response Sheet</h3>`;
+                    }
+                    
+                    const list = document.createElement('div');
+                    list.className = 'response-list';
+                    for(let j = i; j < i + CHUNK_SIZE && j < cards.length; j++){
+                        list.appendChild(cards[j].cloneNode(true));
+                    }
+                    renderBox.appendChild(list);
+
+                    // Watermark at the bottom of each page
+                    const wm = document.createElement('div');
+                    wm.innerHTML = `Made with ❤️ and ☕ by @royverse`;
+                    wm.style.textAlign = 'center';
+                    wm.style.marginTop = '20px';
+                    wm.style.color = '#94a3b8';
+                    wm.style.fontSize = '12px';
+                    renderBox.appendChild(wm);
+
+                    await captureAndAdd(renderBox);
+                }
+
+                document.body.removeChild(renderBox);
+                pdf.save(`${candidateInfo.ht}_Premium_Report.pdf`);
+
+            } catch (err) {
+                console.error("PDF Export failed", err);
+                alert("Failed to generate PDF. An unexpected error occurred.");
+            } finally {
+                // Restore charts back to active canvas
+                chartIds.forEach(id => {
+                    const canvas = document.getElementById(id);
+                    const img = document.getElementById(id + '-img');
+                    if (canvas && img) {
+                        canvas.style.display = 'block';
+                        img.parentNode.removeChild(img);
+                    }
+                });
+
+                document.body.classList.remove('pdf-exporting');
+                btn.innerText = "Download Full Report PDF";
+                btn.disabled = false;
+            }
+        }async function downloadPDF() {
+    const btn = document.getElementById('pdf-download-btn');
+    btn.innerText = "Optimizing PDF Export...";
+    btn.disabled = true;
+
+    filterResponses('all');
+    document.body.classList.add('pdf-exporting');
+
+    try {
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF('p', 'pt', 'a4');
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = pdf.internal.pageSize.getHeight();
+        const margin = 30;
+        const usableWidth = pdfWidth - (margin * 2);
+        
+        let cursorY = margin; // Tracks vertical position on the current page
+
+        // Helper to capture a single element and add it to PDF
+        const addElementToPDF = async (element, isLast = false) => {
+            const canvas = await html2canvas(element, { scale: 1.5, useCORS: true });
+            const imgData = canvas.toDataURL('image/jpeg', 0.85);
+            const imgProps = pdf.getImageProperties(imgData);
+            const imgHeight = (imgProps.height * usableWidth) / imgProps.width;
+
+            // If it doesn't fit on current page, move to next
+            if (cursorY + imgHeight > pdfHeight - margin) {
+                pdf.addPage();
+                cursorY = margin;
+            }
+
+            pdf.addImage(imgData, 'JPEG', margin, cursorY, usableWidth, imgHeight);
+            cursorY += imgHeight + 15; // Add spacing between elements
+        };
+
+        // 1. Process Header/Dashboards as the first block
+        const renderBox = document.createElement('div');
+        renderBox.style.width = '550px'; // Consistent width for calculations
+        renderBox.style.padding = '20px';
+        renderBox.style.background = '#fff';
+        document.body.appendChild(renderBox);
+
+        renderBox.innerHTML = `
+            <h2 style="font-size: 24px; color: #0f172a; margin-bottom:10px;">IMUCET Report</h2>
+            <p>Candidate: ${candidateInfo.name} | ${new Date().toLocaleDateString()}</p>
+        `;
+        renderBox.appendChild(document.querySelector('.kpi-grid').cloneNode(true));
+        
+        await addElementToPDF(renderBox);
+
+        // 2. Process Cards ONE BY ONE (Prevents cutting)
+        const cards = document.querySelectorAll('.q-card');
+        for (let i = 0; i < cards.length; i++) {
+            const cardClone = cards[i].cloneNode(true);
+            renderBox.innerHTML = '';
+            renderBox.appendChild(cardClone);
+            await addElementToPDF(renderBox);
+        }
+
+        document.body.removeChild(renderBox);
+        pdf.save(`${candidateInfo.ht}_Premium_Report.pdf`);
+
+    } catch (err) {
+        console.error("PDF Export Error:", err);
+    } finally {
+        document.body.classList.remove('pdf-exporting');
+        btn.innerText = "Download Full Report PDF";
+        btn.disabled = false;
+    }
+}
+    </script>
+</body>
+</html>
